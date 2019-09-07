@@ -9,7 +9,11 @@ let s:session_minutes = 25
 let s:break_minutes = 5
 
 function! s:duration_minutes(duration)
-    return a:duration[0] / 60
+    return a:duration / 60
+endfunction
+
+function! s:duration_seconds(duration)
+    return a:duration % 60
 endfunction
 
 function! s:start_session(start_time)
@@ -17,17 +21,12 @@ function! s:start_session(start_time)
     let session.id = len(s:sessions) + 1
     let session.start = a:start_time
     let session.last = a:start_time
-    let session.duration = reltime(a:start_time, a:start_time)
+    let session.duration = 0
     let session.notified = -1
 
     call add(s:sessions, session)
     echomsg "Starting session number ".session.id." of ".s:session_minutes." minutes."
     return session
-endfunction
-
-function! s:is_break(session, now)
-    let session = s:latest_session(a:now)
-    let since_last = s:duration_minutes(reltime(session.last, a:now))
 endfunction
 
 function! s:latest_session(now)
@@ -43,7 +42,7 @@ endfunction
 
 function! s:latest_or_new(now)
     let session = s:latest_session(a:now)
-    let since_last = s:duration_minutes(reltime(session.last, a:now))
+    let since_last = s:duration_minutes(a:now - session.last)
     if since_last >= s:break_minutes
         return s:start_session(a:now)
     else
@@ -62,11 +61,11 @@ function! s:notify_break(session)
 endfunction
 
 function! pomodoro#ping()
-    let now = reltime()
+    let now = localtime()
     let session = s:latest_or_new(now)
 
     let session.last = now
-    let session.duration = reltime(session.start, session.last)
+    let session.duration = session.last - session.start
     let session.notified = s:notify_break(session)
 endfunction
 
@@ -74,11 +73,11 @@ function! pomodoro#settings()
     echo "Pomodoro Settings:"
     echo "\tSession:    ".s:session_minutes." min"
     echo "\tBreak:      ".s:break_minutes." min"
-    echo "---"
-    let session = s:latest_session(reltime())
-    echo "You are ".s:duration_minutes(session.duration)." minutes into session number ".session.id."."
-    echo "---"
     if s:has_sessions()
+        echo "---"
+        let session = s:latest_session(localtime())
+        echo "You are ".s:duration_minutes(session.duration)." minutes ".s:duration_seconds(session.duration)." seconds into session number ".session.id."."
+        echo "---"
         echo "\nSessions:"
         for session in s:sessions
             let overdue = session.notified > 0 ? " (".session.notified." overdue)" : ""

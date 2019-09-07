@@ -17,7 +17,9 @@ function! s:duration_seconds(duration)
 endfunction
 
 function! s:duration_time(duration)
-    return [s:duration_minutes(a:duration), s:duration_seconds(a:duration)]
+    let min = s:duration_minutes(a:duration)
+    let sec = s:duration_seconds(a:duration)
+    return [min, sec]
 endfunction
 
 function! s:start_session(start_time)
@@ -73,6 +75,24 @@ function! pomodoro#ping()
     let session.notified = s:notify_break(session)
 endfunction
 
+function! s:rjust(len, s, fill)
+    let strlen = strdisplaywidth(a:s)
+    if strlen > a:len
+        return a:s
+    else
+        return repeat(a:fill, a:len - strlen).a:s
+    endif
+endfunction
+
+function! s:ljust(len, s, fill)
+    let strlen = strdisplaywidth(a:s)
+    if strlen > a:len
+        return a:s
+    else
+        return a:s.repeat(a:fill, a:len - strlen)
+    endif
+endfunction
+
 function! pomodoro#settings()
     echo "Pomodoro Settings:"
     echo "\tSession:    ".s:session_minutes." min"
@@ -85,9 +105,15 @@ function! pomodoro#settings()
         echo "---"
         echo "\nSessions:"
         for session in s:sessions
-            let overdue = session.notified > 0 ? " (".session.notified." overdue)" : ""
-            let from_till = "  [".strftime("%T", session.start)." -> ",strftime("%T", session.last)."]"
-            echo "\t"session.id.":\t"s:duration_minutes(session.duration)" min".overdue.from_till
+            let id = s:rjust(5, session.id, " ")
+            let min = s:duration_minutes(session.duration)
+            let over = session.notified > 0 ? session.notified : 0
+            let overstr = over ? "+".over : ""
+            let duration = s:ljust(12, min.overstr." min", " ")
+            let interval = '['.strftime("%T", session.start).' -> '.strftime("%T", session.last).']'
+            let bar = repeat('=', min).repeat('#', over)
+
+            echo id.":\t".duration."\t".interval."\t".bar
         endfor
     endif
 endfunction

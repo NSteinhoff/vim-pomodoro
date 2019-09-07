@@ -17,7 +17,7 @@ function! s:duration_seconds(duration)
 endfunction
 
 function! s:duration_time(duration)
-    return [s:duration_minutes(duration), s:duration_seconds(duration)]
+    return [s:duration_minutes(a:duration), s:duration_seconds(a:duration)]
 endfunction
 
 function! s:start_session(start_time)

@@ -16,6 +16,10 @@ function! s:duration_seconds(duration)
     return a:duration % 60
 endfunction
 
+function! s:duration_time(duration)
+    return [s:duration_minutes(duration), s:duration_seconds(duration)]
+endfunction
+
 function! s:start_session(start_time)
     let session = {}
     let session.id = len(s:sessions) + 1
@@ -76,12 +80,14 @@ function! pomodoro#settings()
     if s:has_sessions()
         echo "---"
         let session = s:latest_session(localtime())
-        echo "You are ".s:duration_minutes(session.duration)." minutes ".s:duration_seconds(session.duration)." seconds into session number ".session.id."."
+        let [min, sec] = s:duration_time(session.duration)
+        echo "You are ".min." minutes ".sec." seconds into session number ".session.id."."
         echo "---"
         echo "\nSessions:"
         for session in s:sessions
             let overdue = session.notified > 0 ? " (".session.notified." overdue)" : ""
-            echo "\t"session.id.":\t"s:duration_minutes(session.duration)" min".overdue
+            let from_till = "  [".strftime("%T", session.start)." -> ",strftime("%T", session.last)."]"
+            echo "\t"session.id.":\t"s:duration_minutes(session.duration)" min".overdue.from_till
         endfor
     endif
 endfunction

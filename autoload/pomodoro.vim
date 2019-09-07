@@ -111,7 +111,9 @@ function! pomodoro#settings()
             let overstr = over ? "+".over : ""
             let duration = s:ljust(12, min.overstr." min", " ")
             let interval = '['.strftime("%T", session.start).' -> '.strftime("%T", session.last).']'
-            let bar = repeat('=', min).repeat('#', over)
+
+            let remaining = s:session_minutes - min ? s:session_minutes - min : 0
+            let bar = repeat('=', min).repeat('.', remaining).repeat('!', over)
 
             echo id.":\t".duration."\t".interval."\t".bar
         endfor

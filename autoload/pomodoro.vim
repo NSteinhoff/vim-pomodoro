@@ -4,7 +4,6 @@
 " License:          This file is placed in the public domain.
 
 
-let s:sessions = []
 let s:session_minutes = 25
 let s:break_minutes = 5
 
@@ -39,11 +38,18 @@ function! s:latest_session(now)
     if s:has_sessions()
         return s:sessions[-1]
     else
+        " The first time around, create the sessions variable
+        " and start the first session.
+        let s:sessions = []
         return s:start_session(a:now)
 endfunction
 
 function! s:has_sessions()
-    return len(s:sessions) > 0
+    if exists('s:sessions')
+        return len(s:sessions) > 0
+    else
+        return 0
+    endif
 endfunction
 
 function! s:latest_or_new(now)
@@ -134,12 +140,9 @@ function! s:display_session(session)
     return id.":\t".duration."\t".interval."\t".bar
 endfunction
 
-function! pomodoro#settings()
-    echo "Pomodoro Settings:"
-    echo "\tSession:    ".s:session_minutes." min"
-    echo "\tBreak:      ".s:break_minutes." min"
+function! s:display_sessions()
     if s:has_sessions()
-        echo "---"
+        echo "\n---"
         let session = s:latest_session(localtime())
         let [min, sec] = s:duration_time(session.duration)
         echo "You are ".min." minutes ".sec." seconds into session number ".session.id."."
@@ -149,6 +152,13 @@ function! pomodoro#settings()
             echo s:display_session(session)
         endfor
     endif
+endfunction
+
+function! pomodoro#settings()
+    echo "Pomodoro Settings:"
+    echo "\tSession:    ".s:session_minutes." min"
+    echo "\tBreak:      ".s:break_minutes." min"
+    call s:display_sessions()
 endfunction
 
 function! pomodoro#sessions()

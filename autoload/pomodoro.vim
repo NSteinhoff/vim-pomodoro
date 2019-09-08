@@ -29,10 +29,10 @@ function! s:start_session(start_time)
     let session.duration = 0
     let session.notified = -1
     let session.scheduled = s:session_minutes
-    let session.break = s:session_break
+    let session.break = s:break_minutes
 
     call add(s:sessions, session)
-    echomsg "Starting session number ".session.id." of ".s:session_minutes." minutes."
+    echomsg "Starting session number ".session.id." of ".session.scheduled." minutes."
     return session
 endfunction
 
@@ -65,7 +65,7 @@ function! s:latest_or_new(now)
 endfunction
 
 function! s:notify_break(session)
-    let overtime = s:duration_minutes(a:session.duration) - session.scheduled
+    let overtime = s:duration_minutes(a:session.duration) - a:session.scheduled
     if overtime > a:session.notified
         echomsg "Session over, time to take a break!"
         return overtime
@@ -103,17 +103,17 @@ endfunction
 
 function! s:elapsed(session)
     let total = s:duration_minutes(a:session.duration)
-    return min([total, s:session_minutes])
+    return min([total, a:session.scheduled])
 endfunction
 
 function! s:overtime(session)
     let total = s:duration_minutes(a:session.duration)
-    return max([total - s:session_minutes, 0])
+    return max([total - a:session.scheduled, 0])
 endfunction
 
 function! s:remaining(session)
     let total = s:duration_minutes(a:session.duration)
-    return max([s:session_minutes - total, 0])
+    return max([a:session.scheduled - total, 0])
 endfunction
 
 function! s:progress_bar(session)

@@ -93,6 +93,47 @@ function! s:ljust(len, s, fill)
     endif
 endfunction
 
+function! s:elapsed(session)
+    let total = s:duration_minutes(a:session.duration)
+    return min([total, s:session_minutes])
+endfunction
+
+function! s:overtime(session)
+    let total = s:duration_minutes(a:session.duration)
+    return max([total - s:session_minutes, 0])
+endfunction
+
+function! s:remaining(session)
+    let total = s:duration_minutes(a:session.duration)
+    return max([s:session_minutes - total, 0])
+endfunction
+
+function! s:progress_bar(session)
+    return repeat('=', s:elapsed(a:session)).repeat('.', s:remaining(a:session)).repeat('!', s:overtime(a:session))
+endfunction
+
+function! s:display_duration(session)
+    let elapsed = s:elapsed(a:session)
+    let overtime = s:overtime(a:session)
+    let overtimestr = overtime ? "+".overtime : ""
+    return elapsed.overtimestr." min"
+endfunction
+
+function! s:display_interval(session)
+    let start = strftime("%T", a:session.start)
+    let end = strftime("%T", a:session.last)
+    return '['.start.' -> '.end.']'
+endfunction
+
+function! s:display_session(session)
+    let id = s:rjust(5, a:session.id, " ")
+    let duration =  s:ljust(12, s:display_duration(a:session), " ")
+    let interval = s:display_interval(a:session)
+    let bar = s:progress_bar(a:session)
+
+    return id.":\t".duration."\t".interval."\t".bar
+endfunction
+
 function! pomodoro#settings()
     echo "Pomodoro Settings:"
     echo "\tSession:    ".s:session_minutes." min"
@@ -105,17 +146,7 @@ function! pomodoro#settings()
         echo "---"
         echo "\nSessions:"
         for session in s:sessions
-            let id = s:rjust(5, session.id, " ")
-            let min = s:duration_minutes(session.duration)
-            let over = session.notified > 0 ? session.notified : 0
-            let overstr = over ? "+".over : ""
-            let duration = s:ljust(12, min.overstr." min", " ")
-            let interval = '['.strftime("%T", session.start).' -> '.strftime("%T", session.last).']'
-
-            let remaining = s:session_minutes - min ? s:session_minutes - min : 0
-            let bar = repeat('=', min).repeat('.', remaining).repeat('!', over)
-
-            echo id.":\t".duration."\t".interval."\t".bar
+            echo s:display_session(session)
         endfor
     endif
 endfunction

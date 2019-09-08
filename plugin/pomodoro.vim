@@ -7,5 +7,5 @@ command! PomodoroPing call pomodoro#ping()
 command! PomodoroInfo call pomodoro#settings()
 
 augroup pomodoro
-    au CursorHold * call pomodoro#ping()
+    " au CursorHold * call pomodoro#ping()
 augroup END

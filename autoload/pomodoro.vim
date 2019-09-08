@@ -28,6 +28,8 @@ function! s:start_session(start_time)
     let session.last = a:start_time
     let session.duration = 0
     let session.notified = -1
+    let session.scheduled = s:session_minutes
+    let session.break = s:session_break
 
     call add(s:sessions, session)
     echomsg "Starting session number ".session.id." of ".s:session_minutes." minutes."
@@ -55,7 +57,7 @@ endfunction
 function! s:latest_or_new(now)
     let session = s:latest_session(a:now)
     let since_last = s:duration_minutes(a:now - session.last)
-    if since_last >= s:break_minutes
+    if since_last >= session.break
         return s:start_session(a:now)
     else
         return session
@@ -63,7 +65,7 @@ function! s:latest_or_new(now)
 endfunction
 
 function! s:notify_break(session)
-    let overtime = s:duration_minutes(a:session.duration) - s:session_minutes
+    let overtime = s:duration_minutes(a:session.duration) - session.scheduled
     if overtime > a:session.notified
         echomsg "Session over, time to take a break!"
         return overtime

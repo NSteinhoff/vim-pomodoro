@@ -74,15 +74,6 @@ function! s:notify_break(session)
     endif
 endfunction
 
-function! pomodoro#ping()
-    let now = localtime()
-    let session = s:latest_or_new(now)
-
-    let session.last = now
-    let session.duration = session.last - session.start
-    let session.notified = s:notify_break(session)
-endfunction
-
 function! s:rjust(len, s, fill)
     let strlen = strdisplaywidth(a:s)
     if strlen > a:len
@@ -156,13 +147,60 @@ function! s:display_sessions()
     endif
 endfunction
 
-function! pomodoro#settings()
-    echo "Pomodoro Settings:"
-    echo "\tSession:    ".s:session_minutes." min"
-    echo "\tBreak:      ".s:break_minutes." min"
-    call s:display_sessions()
+function! s:enabled()
+    return exists('#pomodoro#CursorHold')
 endfunction
 
 function! pomodoro#sessions()
     return s:sessions
+endfunction
+
+function! pomodoro#ping()
+    try
+        let now = localtime()
+        let session = s:latest_or_new(now)
+
+        let session.last = now
+        let session.duration = session.last - session.start
+        let session.notified = s:notify_break(session)
+    catch
+        let msg = "Error during 'ping' (".v:exception."). Disabling pomodoro!"
+        call pomodoro#disable(msg)
+    endtry
+endfunction
+
+function! pomodoro#settings()
+    echo "Pomodoro Settings:"
+    echo "\tSession:    ".s:session_minutes." min"
+    echo "\tBreak:      ".s:break_minutes." min"
+    if s:enabled()
+        echo "\t[enabled]"
+    else
+        echo "\t[disabled]"
+    endif
+    call s:display_sessions()
+endfunction
+
+function! pomodoro#disable(...)
+    aug pomodoro
+        au!
+    aug END
+    let msg = a:0 > 0 ? a:1 : "Pomodoro disabled"
+    echo msg
+endfunction
+
+function! pomodoro#enable()
+    aug pomodoro
+        au!
+        au CursorHold * call pomodoro#ping()
+    aug END
+    echo "Pomodoro enabled."
+endfunction
+
+function! pomodoro#toggle()
+    if s:enabled()
+        call pomodoro#disable()
+    else
+        call pomodoro#enable()
+    endif
 endfunction

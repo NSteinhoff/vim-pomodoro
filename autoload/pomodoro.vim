@@ -16,22 +16,22 @@ function! s:start_session(start_time)
     let session.last = a:start_time
     let session.duration = 0
     let session.notified = 0
-    let session.scheduled = s:session_minutes
-    let session.break = s:break_minutes
+    let session.scheduled = copy(s:session_minutes)
+    let session.break = copy(s:break_minutes)
 
     call add(s:sessions, session)
     echomsg "Starting session number ".session.id." of ".session.scheduled." minutes."
     return session
 endfunction
 
-function! s:latest_session(now)
+function! s:latest_session()
     if s:has_sessions()
         return s:sessions[-1]
     else
         " The first time around, create the sessions variable
         " and start the first session.
         let s:sessions = []
-        return s:start_session(a:now)
+        return s:start_session(localtime())
 endfunction
 
 function! s:has_sessions()
@@ -43,7 +43,7 @@ function! s:has_sessions()
 endfunction
 
 function! s:latest_or_new(now)
-    let session = s:latest_session(a:now)
+    let session = s:latest_session()
     let since_last = s:duration_minutes(a:now - session.last)
     if since_last >= session.break
         return s:start_session(a:now)
@@ -52,14 +52,26 @@ function! s:latest_or_new(now)
     endif
 endfunction
 
+function! s:flash_statusline(msg)
+    if !exists('s:statusline_set') || !s:statusline_set
+        let s:statusline = &statusline
+        let &statusline = '%=%#ErrorMsg# >>> '.a:msg.' <<< %#StatusLine#%='
+        let s:statusline_set = 1
+        call timer_start(1000, 'pomodoro#restore_statusline')
+    endif
+endfunction
+
+function! pomodoro#restore_statusline(timer)
+    let &statusline = s:statusline
+    let s:statusline_set = 0
+endfunction
+
 function! s:notify(session)
     if !a:session.notified
         echomsg "Session over, time to take a break!"
         let a:session.notified = 1
     else
-        if localtime() % 3 == 0
-            call s:echo_overtime(a:session)
-        endif
+        call s:warning_overtime(a:session)
     endif
 endfunction
 
@@ -129,7 +141,7 @@ endfunction
 function! s:display_sessions()
     if s:has_sessions()
         echo "\n---"
-        let session = s:latest_session(localtime())
+        let session = s:latest_session()
         let min = s:duration_minutes(session.duration)
         let sec = s:duration_seconds(session.duration)
         echo "You are ".min." minutes ".sec." seconds into session number ".session.id."."
@@ -149,15 +161,47 @@ function! pomodoro#sessions()
     return s:sessions
 endfunction
 
-function! s:echo_overtime(session)
+function! s:warning_overtime(session)
     let overtime = s:overtime(a:session)
-    if overtime > 0
-        echo repeat('!', overtime)
+    if overtime >= 0
+        let msg = repeat('!', overtime)
+        call s:flash_statusline(msg)
+    endif
+endfunction
+
+function! pomodoro#display_break_timer(timer)
+    let session = s:latest_session()
+    let since_last = localtime() - session.last
+    let min = since_last / 60
+    let sec = since_last % 60
+    let current = printf("%02d:%02d", min, sec)
+    let target = printf("%02d:00", session.break)
+    echo 'On Break: '.current.' / '.target
+endfunction
+
+function! s:on_break()
+    if exists('s:break_timer')
+        return s:break_timer > 0
+    else
+        return 0
+    endif
+endfunction
+
+function! s:start_break()
+    let s:break_timer = timer_start(1000, 'pomodoro#display_break_timer', {'repeat': -1})
+endfunction
+
+function! s:stop_break()
+    if s:on_break()
+        let s:break_timer = timer_stop(s:break_timer)
     endif
 endfunction
 
 function! pomodoro#ping()
     try
+        if s:on_break()
+            call s:stop_break()
+        endif
         let now = localtime()
         let session = s:latest_or_new(now)
 
@@ -165,6 +209,7 @@ function! pomodoro#ping()
         let session.duration = session.last - session.start
         if s:total(session) >= session.scheduled
             call s:notify(session)
+            call s:start_break()
         endif
     catch
         let msg = "Error during 'ping' (".v:exception."). Disabling pomodoro!"

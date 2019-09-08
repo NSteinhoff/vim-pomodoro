@@ -165,7 +165,7 @@ function! pomodoro#ping()
         let session.notified = s:notify_break(session)
     catch
         let msg = "Error during 'ping' (".v:exception."). Disabling pomodoro!"
-        call pomodoro#disable(msg)
+        echo pomodoro#disable(msg)
     endtry
 endfunction
 
@@ -185,22 +185,21 @@ function! pomodoro#disable(...)
     aug pomodoro
         au!
     aug END
-    let msg = a:0 > 0 ? a:1 : "Pomodoro disabled"
-    echo msg
+    return a:0 > 0 ? a:1 : "Pomodoro disabled"
 endfunction
 
-function! pomodoro#enable()
+function! pomodoro#enable(...)
     aug pomodoro
         au!
         au CursorHold * call pomodoro#ping()
     aug END
-    echo "Pomodoro enabled."
+    return a:0 > 0 ? a:1 : "Pomodoro enabled"
 endfunction
 
 function! pomodoro#toggle()
     if s:enabled()
-        call pomodoro#disable()
+        echo pomodoro#disable()
     else
-        call pomodoro#enable()
+        echo pomodoro#enable()
     endif
 endfunction

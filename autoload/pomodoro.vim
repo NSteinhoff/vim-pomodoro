@@ -27,7 +27,7 @@ function! s:start_session(start_time)
     let session.start = a:start_time
     let session.last = a:start_time
     let session.duration = 0
-    let session.notified = -1
+    let session.notified = 0
     let session.scheduled = s:session_minutes
     let session.break = s:break_minutes
 
@@ -64,15 +64,17 @@ function! s:latest_or_new(now)
     endif
 endfunction
 
-function! s:notify_break(session)
-    let overtime = s:duration_minutes(a:session.duration) - a:session.scheduled
-    if overtime > a:session.notified
+function! s:notify(session)
+    if !a:session.notified
         echomsg "Session over, time to take a break!"
-        return overtime
+        let a:session.notified = 1
     else
-        return a:session.notified
+        if localtime() % 3 == 0
+            call s:echo_overtime(a:session)
+        endif
     endif
 endfunction
+
 
 function! s:rjust(len, s, fill)
     let strlen = strdisplaywidth(a:s)
@@ -92,18 +94,22 @@ function! s:ljust(len, s, fill)
     endif
 endfunction
 
+function! s:total(session)
+    return s:duration_minutes(a:session.duration)
+endfunction
+
 function! s:elapsed(session)
-    let total = s:duration_minutes(a:session.duration)
+    let total = s:total(a:session)
     return min([total, a:session.scheduled])
 endfunction
 
 function! s:overtime(session)
-    let total = s:duration_minutes(a:session.duration)
+    let total = s:total(a:session)
     return max([total - a:session.scheduled, 0])
 endfunction
 
 function! s:remaining(session)
-    let total = s:duration_minutes(a:session.duration)
+    let total = s:total(a:session)
     return max([a:session.scheduled - total, 0])
 endfunction
 
@@ -155,6 +161,13 @@ function! pomodoro#sessions()
     return s:sessions
 endfunction
 
+function! s:echo_overtime(session)
+    let overtime = s:overtime(a:session)
+    if overtime > 0
+        echo repeat('!', overtime)
+    endif
+endfunction
+
 function! pomodoro#ping()
     try
         let now = localtime()
@@ -162,7 +175,9 @@ function! pomodoro#ping()
 
         let session.last = now
         let session.duration = session.last - session.start
-        let session.notified = s:notify_break(session)
+        if s:total(session) >= session.scheduled
+            call s:notify(session)
+        endif
     catch
         let msg = "Error during 'ping' (".v:exception."). Disabling pomodoro!"
         echo pomodoro#disable(msg)

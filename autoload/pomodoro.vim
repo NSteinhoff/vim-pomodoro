@@ -1,9 +1,3 @@
-" Vim plugin for keeping track of uninterrupted time worked
-" Last Change:      2019 Sep 07
-" Maintainer:       Niko Steinhoff <niko.steinhoff@gmail.com>
-" License:          This file is placed in the public domain.
-
-
 let s:session_minutes = 25
 let s:break_minutes = 5
 
@@ -13,12 +7,6 @@ endfunction
 
 function! s:duration_seconds(duration)
     return a:duration % 60
-endfunction
-
-function! s:duration_time(duration)
-    let min = s:duration_minutes(a:duration)
-    let sec = s:duration_seconds(a:duration)
-    return [min, sec]
 endfunction
 
 function! s:start_session(start_time)
@@ -74,7 +62,6 @@ function! s:notify(session)
         endif
     endif
 endfunction
-
 
 function! s:rjust(len, s, fill)
     let strlen = strdisplaywidth(a:s)
@@ -143,7 +130,8 @@ function! s:display_sessions()
     if s:has_sessions()
         echo "\n---"
         let session = s:latest_session(localtime())
-        let [min, sec] = s:duration_time(session.duration)
+        let min = s:duration_minutes(session.duration)
+        let sec = s:duration_seconds(session.duration)
         echo "You are ".min." minutes ".sec." seconds into session number ".session.id."."
         echo "---"
         echo "\nSessions:"

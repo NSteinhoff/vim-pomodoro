@@ -68,7 +68,7 @@ endfunction
 
 function! s:notify(session)
     if !a:session.notified
-        echomsg "Session over, time to take a break!"
+        call s:flash_statusline("Session over, time to take a break!")
         let a:session.notified = 1
     else
         call s:warning_overtime(a:session)
@@ -197,15 +197,14 @@ function! s:stop_break()
     endif
 endfunction
 
-function! pomodoro#ping()
+function! pomodoro#ping(time)
     try
         if s:on_break()
             call s:stop_break()
         endif
-        let now = localtime()
-        let session = s:latest_or_new(now)
+        let session = s:latest_or_new(a:time)
 
-        let session.last = now
+        let session.last = a:time
         let session.duration = session.last - session.start
         if s:total(session) >= session.scheduled
             call s:notify(session)
@@ -239,7 +238,7 @@ endfunction
 function! pomodoro#enable(...)
     aug pomodoro
         au!
-        au CursorHold * call pomodoro#ping()
+        au CursorHold * call pomodoro#ping(localtime())
     aug END
     return a:0 > 0 ? a:1 : "Pomodoro enabled"
 endfunction
@@ -251,3 +250,5 @@ function! pomodoro#toggle()
         echo pomodoro#enable()
     endif
 endfunction
+
+" vim: foldmethod=indent

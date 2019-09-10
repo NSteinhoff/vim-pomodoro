@@ -164,7 +164,8 @@ endfunction
 function! s:warning_overtime(session)
     let overtime = s:overtime(a:session)
     if overtime >= 0
-        let msg = repeat('!', float2nr(pow(2, overtime)))
+        let level = max([min([overtime, 1]), 10])
+        let msg = repeat('!', level)
         call s:flash_statusline(msg)
     endif
 endfunction

@@ -162,11 +162,8 @@ function! pomodoro#sessions()
 endfunction
 
 function! s:warning_overtime(session)
-    let overtime = s:overtime(a:session)
-    if overtime >= 0
-        let level = max([min([overtime, 1]), 10])
-        let msg = repeat('!', level)
-        call s:flash_statusline(msg)
+    if s:overtime(a:session) >= 0
+        call s:flash_statusline('!!! OVERTIME !!!')
     endif
 endfunction
 

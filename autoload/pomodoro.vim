@@ -163,7 +163,7 @@ endfunction
 
 function! s:warning_overtime(session)
     if s:overtime(a:session) >= 0
-        call s:flash_statusline('!!! OVERTIME !!!')
+        call s:flash_statusline('!!! TAKE A BREAK !!!')
     endif
 endfunction
 
